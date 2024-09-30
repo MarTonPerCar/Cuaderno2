@@ -1,5 +1,7 @@
 # Cuaderno 2 
 
+Cuaderndo desarrollado por Mario Pérez Carmona
+
 Este Cuaderno muestra el desarrollo del segundo cuaderno de la asignatura, el cual incluye 4 ejercicios.
 
 ### Pasos Previos
@@ -29,12 +31,15 @@ Una vez están esas librerías instaladas, se puede empezar por las propias tare
 
 #### Preparación 
 
-Cabe destacar que se hara varios ejercicios sobre una imagen original denominada Mandril.jpg, es por ello que empezamos con un codigo simple que carga la foto del Mandril, la pone en gris para mejor trabajo y más importante le aplica canny que se utilizará en el siguiente ejercicio
+Cabe destacar que se hara varios ejercicios sobre una imagen original denominada Mandril.jpg, es por ello que empezamos con un codigo simple que carga la foto del Mandril, la pone en gris para mejor trabajo y más importante se le aplica canny que se utilizará en el siguiente ejercicio
 
 ```python
-import cv2  
-import numpy as np
-import matplotlib.pyplot as plt
+gris = cv2.cvtColor(cv2.imread('mandril.jpg') , cv2.COLOR_BGR2GRAY)
+
+canny = cv2.Canny(gris, 100, 200)
+
+plt.imshow(canny, cmap='gray') 
+plt.show()
 ```
 
 <div align="center"> Versión Original </div>
@@ -51,7 +56,7 @@ import matplotlib.pyplot as plt
 
 #### Tarea 1 - Realizar varios ejercicios sobre un canny
 
-En esta primera tarea utilizaremos el canny el cual es una operación la cual obtiene una imagen que muestra solo los bordes de los objetos, lo que ayuda a identificar formas y contornos en la imagen. Esta primera tarea tiene varias subapartados, estos son:
+En esta primera tarea utilizaremos el canny. Esta primera tarea tiene varias subapartados, estos son:
 
 1. Contar el número de pixeles NO nulos de la imagen canny y representanlo en una grafica
 2. Decir cual es la columna con más pixeles NO nulos
@@ -62,9 +67,86 @@ Para la realización de este apartado vamos a separar todas estas tareas en 3 ap
 
 1. Primero tendremos el calculo de los pixeles no nulos tanto por columnas como por filas guardadas en las variables col_counts y row_counts corresponientes, así mismo se guardará en las variables cols y rows respectivamente los porcentajes de los pixeles no nulos respecto a los totales. Guardamos los datos de col_counts y row_counts en otras variables para trabajo más simple ya que los originales estan puestas de manera más complejas, y sacamos con un simple max los valores máximos
 
+```Python
+col_counts = cv2.reduce(canny, 0, cv2.REDUCE_SUM, dtype=cv2.CV_32SC1)
+cols = col_counts[0] / (255 * canny.shape[1])
+
+col_counts_complete = []
+for i in range (len(col_counts)):
+    col_counts_complete.append(col_counts[0][i])
+
+valor_maximo_col = np.max(col_counts_complete)
+
+# Filas
+
+row_counts = cv2.reduce(canny, 1, cv2.REDUCE_SUM, dtype=cv2.CV_32SC1)
+rows = row_counts[:, 0] / (255 * canny.shape[0])
+
+row_counts_complete = []
+for i in range (len(row_counts)):
+    row_counts_complete.append(row_counts[i][0])
+
+valor_maximo_row = np.max(row_counts_complete)
+```
+
 2. Luego escribimos por pantalla los resultados de los valores de los máximos y calculamos y escribimos por pantalla las columnas que su número de pixeles esta por encima del 95% del máximo 
 
+```Python
+print("El número de pixeles mayores se encuentra en la columna:", valor_maximo_col)
+print("El número de pixeles mayores se encuentra en la fila:", valor_maximo_row)
+
+counts_max = np.sum(canny == 255, axis=0)
+TopeCol = 0.95 * max(counts_max)
+
+for i in counts_max:
+    #print (i)
+    if i >= TopeCol:
+        print(i, "Es una columna cerca al 95% del mayor")
+
+counts_max2 = np.sum(canny == 255, axis=0)
+TopeCol2 = 0.95 * max(counts_max2)
+
+for i in counts_max2:
+    if i >= TopeCol:
+        print(i, "Es una fila cerca al 95% del mayor")
+
+```
+
 3. Por ultimo, cogemos los valores sacados arriba y representamos los valores en unas graficas con un formato simple de la imagen a la izquierda y la grafica a la derecha.
+
+```Python
+# Columnas
+
+plt.figure(figsize=(9, 5))
+plt.subplot(1, 2, 1)
+plt.axis("off")
+plt.title("Canny")
+plt.imshow(canny, cmap='gray') 
+
+plt.subplot(1, 2, 2)
+plt.title("Respuesta de Canny")
+plt.xlabel("Columnas")
+plt.ylabel("% píxeles")
+plt.plot(cols)
+plt.xlim([0, canny.shape[0]])
+
+# Filas
+
+plt.figure(figsize=(9, 5))
+plt.subplot(1, 2, 1)
+plt.axis("off")
+plt.title("Canny")
+plt.imshow(canny, cmap='gray') 
+
+plt.subplot(1, 2, 2)
+plt.title("Respuesta de Canny")
+plt.xlabel("Filas")
+plt.ylabel("% píxeles")
+plt.plot(rows)
+plt.xlim([0, canny.shape[0]])
+```
+
+Ejemplo de las graficas:
 
 <div align="center">
     <img src="IMG_ReadMe/EjemploGrafica.PNG" alt="Descripción" width="600"/>
@@ -89,6 +171,27 @@ Para la realización de este apartado nuevamente vamos a separar todas estas tar
 2.  La segunda parte sería hacer el mismo calculo empleado en la tarea 1 en el primer apartado, donde se calcula el número de pixeles NO nulos de las columnas y las filas, máximos de ambos, etc.
 
 3. En la tercera parte, creamos una copia con canales de color de la imagen y empezamos a poner lineas en las posiciones para representar las columnas y filas máximas más las filas y columnas con valores por encima del 95%, luego utilizamos el comando cv2.addWeighted para añadir todas las lineas.
+
+```Python
+imagen_color = cv2.cvtColor(imagenUmbralizada, cv2.COLOR_GRAY2BGR)
+CopiaColor = imagen_color.copy()
+
+MaximoPorcentajeCol = 0.95 * valor_maximo_col
+MaximoPorcentajeRow = 0.95 * valor_maximo_row
+
+for i in range (0, imagenUmbralizada.shape[1] - 1):
+    if (col_counts_complete[i] >= MaximoPorcentajeCol) and (col_counts_complete[i] != valor_maximo_col):
+        cv2.line(CopiaColor, (i, 0), (i, 512), (255, 255, 0), 3)
+    elif col_counts_complete[i] == valor_maximo_col:
+        cv2.line(CopiaColor, (i, 0), (i, 512), (0, 255, 0), 3)
+
+    if (row_counts_complete[i] >= MaximoPorcentajeRow) and (row_counts_complete[i] != valor_maximo_row):
+        cv2.line(CopiaColor, (0, i), (512, i), (0, 0, 255), 3)
+    elif row_counts_complete[i] == valor_maximo_row:
+        cv2.line(CopiaColor, (0, i), (512, i), (255, 0, 0), 3)
+
+cv2.addWeighted(CopiaColor, 0.5, imagen_color, 1 - 0.5, 0, imagen_color
+```
 
 4. Luego en el cuarto apartado creamos una leyenda que muestre que representa cada color
 
@@ -200,7 +303,7 @@ Otro ejemplo:
 
 #### Tarea 4 - Plantear una reinterpretación de la parte de procesamiento de la imagen
 
-Esta última tarea es algo más independiente y pide un concepto más único e independiente. En mi caso he decido realizar algo parecido al apartado anterior, donde cada modo aplicará un sobel siendo la particularidad de tener además una máscara la cual dertinará un canal de color, es decir tendremos un modo que solo aplicara un sobel sobre el canal rojo, otro sobre el canal verde y otro sobre el azul, creando un efecto donde la pantalla puede estar totalmente negra pero tener siluetas y contornos exclusivamente a objetos del color correspondiente 
+Esta última tarea es algo más independiente y pide un concepto único. En mi caso he decido realizar algo parecido al apartado anterior, donde cada modo aplicará un sobel siendo la particularidad de tener además una máscara la cual dertinará un canal de color, es decir tendremos un modo que solo aplicara un sobel sobre el canal rojo, otro sobre el canal verde y otro sobre el azul, creando un efecto donde la pantalla puede estar totalmente negra pero tener siluetas y contornos exclusivamente a objetos del color correspondiente 
 
 Para la realización de esto tomaremos el esqueleto de antes:
 
